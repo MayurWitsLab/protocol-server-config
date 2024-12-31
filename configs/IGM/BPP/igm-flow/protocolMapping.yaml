@@ -53,14 +53,19 @@ protocol:
       - business_key: description
         extractionPath:  message.issue.description
 
+
+
       - business_key: actors
         extractionPath:  message.issue.actors
 
-      - business_key: complainantid
+      - business_key: complainantId
         extractionPath:  message.issue.complainant_id
 
       - business_key: refs
         extractionPath:  message.issue.refs
+      
+      - business_key: actions
+        extractionPath:  message.issue.actions
 
     mapping:
       - business_key: context.action
@@ -84,8 +89,8 @@ protocol:
       - business_key: issue.source_id
         extractionPath:  message.issue.source_id
 
-      - business_key: complaint_id
-        extractionPath:  message.issue.complaint_id
+      - business_key: issue.complainant_id
+        extractionPath:  message.issue.complainant_id
 
       - business_key: issue.description
         extractionPath:  message.issue.description
@@ -101,15 +106,10 @@ protocol:
 
       - business_key: issue.expected_resolution_time
         extractionPath:  message.issue.expected_resolution_time
-
-      - business_key: expectedresponsetime
-        extractionPath:  message.issue.expected_response_time
       
       - business_key: issue.expected_response_time
         extractionPath:  message.issue.expected_response_time
       
-      - business_key: issue.complaint_id
-        extractionPath:  message.issue.complaint_id
       
       - business_key: issue.last_action_id
         extractionPath:  message.issue.last_action_id
@@ -119,15 +119,34 @@ protocol:
  
 
   on_issue:
-    session:
-      - beckn_key: issue.status
+    sessionData:
+      - beckn_key: status
         value: data.status
-      - beckn_key: issue.actions
-        value: data.actions
-      - beckn_key: issue.actors
-        value: data.actors
-      - beckn_key: issue.actors
-        value: data.actors
+
+#actions_append
+      - beckn_key: actions_append
+        value: "[{id:data.id,description:data.actions_description,updated_at:new Date().toISOString(),action_by:'NP2',actor_detail:data.actor_detail}]"
+      
+
+
+      - beckn_key: actions
+        value: '[...session.actions,...session.actions_append]'
+      
+      - beckn_key: last_action_id
+        value: data.id
+
+
+      # - beckn_key: example
+      #   value: "[...session.actions_append[0],experiment]"
+      # - beckn_key: experiment
+      #   value: data.reference_no
+
+      # - beckn_key: issue.actions
+      #   value: data.actions
+      # - beckn_key: issue.actors
+      #   value: data.actors
+      # - beckn_key: issue.actors
+      #   value: data.actors
 
 
       # - beckn_key: provider_status
@@ -154,9 +173,6 @@ protocol:
       
       - beckn_key: message.update_target.actions
         value: '"APPENDED"'
-      
-      - beckn_key: message.experiment
-        value: session.reference_no
 
       - beckn_key: message.issue.id
         value: session.issueId
@@ -165,7 +181,7 @@ protocol:
         value: session.issuelevel
 
       - beckn_key: message.issue.status
-        value: data.status || session.issue.status
+        value: data.status && data.status
 
       - beckn_key: message.issue.expected_response_time
         value:  session.expected_response_time
@@ -177,22 +193,33 @@ protocol:
         value:  session.refs
 
       - beckn_key: message.issue.actors
-        value:  session.actors 
+        value:  '[...session.actors,...session.actorsKey]' 
 
-      - beckn_key: message.issue.sourceid
-        value:  session.source_id
+      - beckn_key: message.issue.source_id
+        value:  session.sourceId
 
-      - beckn_key: message.issue.complaint_id
-        value:  session.complaintid 
+      - beckn_key: message.issue.complainant_id
+        value:  session.complainantId 
+
+      - beckn_key: message.issue.respondent_ids
+        value:  '["NP2"]'
 
       - beckn_key: message.issue.description
         value:  session.description
       
       - beckn_key: message.issue.last_action_id
-        value: session.lastactionid
+        value: session.last_action_id
 
-      - beckn_key: message.issue.action
-        value: session.action
+      - beckn_key: message.issue.actions
+        value: data.send_resolution === "true" && [...session.actions,...session.actions_append,...session.resolution_keys] || data.send_resolution === "false" && [...session.actions,...session.actions_append]
+
+      
+      - beckn_key: message.issue.resolutions
+        value: data.send_resolution === "true" && session.resolutions 
+
+      - beckn_key: message.issue.info_requested_code
+        value: session.info_requested[data.info_requested_code]
+
 
   # #provider mapping
   #     - beckn_key: message.issue.id
